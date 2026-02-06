@@ -24,28 +24,27 @@ h1 {
 }
 
 .grid-wrapper {
-  display: grid;
-  grid-template-columns: 40px repeat(53, 14px); /* 40px for day labels */
-  gap: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.month-labels {
+  display: flex;
+  margin-left: 20px; /* align with day rows */
+  height: 20px;
 }
 
 .month-label {
-  grid-column: span 1;
   font-size: 12px;
+  color: #aaa;
   text-align: center;
-  color: #aaa;
 }
 
-.day-label {
-  writing-mode: vertical-lr;
-  text-align: left;
-  font-size: 12px;
-  color: #aaa;
-  height: 14px;
-}
-
-.grid {
-  display: contents; /* allows grid children to respect wrapper columns */
+.week-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-right: 4px;
 }
 
 .day {
@@ -62,4 +61,14 @@ h1 {
 
 .day:hover {
   outline: 1px solid #888;
+}
+
+.week-days {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-right: 8px;
+  font-size: 12px;
+  color: #aaa;
+  height: 100%;
 }

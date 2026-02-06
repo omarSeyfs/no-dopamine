@@ -30,14 +30,20 @@ h1 {
 
 .month-labels {
   display: flex;
-  margin-left: 20px; /* align with day rows */
+  margin-left: 20px; /* align with day labels */
   height: 20px;
+  margin-bottom: 4px;
 }
 
 .month-label {
   font-size: 12px;
   color: #aaa;
-  text-align: center;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.weeks {
+  display: flex;
 }
 
 .week-column {
@@ -67,8 +73,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-right: 8px;
+  margin-right: 4px;
   font-size: 12px;
   color: #aaa;
-  height: 100%;
 }

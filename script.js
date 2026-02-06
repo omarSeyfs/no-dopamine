@@ -18,29 +18,25 @@ function buildGrid(name, containerId) {
   const container = document.getElementById(containerId);
   container.innerHTML = "";
 
-  // 1. Month labels container
+  // Month labels container
   const monthLabels = document.createElement("div");
   monthLabels.className = "month-labels";
   container.appendChild(monthLabels);
 
-  // 2. Weeks container
+  // Weeks container
   const weeksContainer = document.createElement("div");
   weeksContainer.className = "weeks";
+  weeksContainer.style.display = "flex";
   container.appendChild(weeksContainer);
 
-  // Prepare all days
+  // Create a map of month to its first day column
   const allDates = [];
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     allDates.push(new Date(d));
   }
 
-  // Group into weeks (starting Sunday)
   const weeks = [];
   let week = [];
-  let firstDay = new Date(start);
-  // Fill initial empty days to align with Sunday
-  for (let i = 0; i < firstDay.getDay(); i++) week.push(null);
-
   allDates.forEach(day => {
     week.push(day);
     if (day.getDay() === 6) {
@@ -50,20 +46,8 @@ function buildGrid(name, containerId) {
   });
   if (week.length) weeks.push(week);
 
-  // Month labels
-  weeks.forEach((weekDaysArr, idx) => {
-    const firstDayInWeek = weekDaysArr.find(d => d !== null);
-    const label = document.createElement("div");
-    label.className = "month-label";
-    label.style.width = "18px"; // width per week
-    if (firstDayInWeek && firstDayInWeek.getDate() <= 7) {
-      label.textContent = monthNames[firstDayInWeek.getMonth()];
-    }
-    monthLabels.appendChild(label);
-  });
-
   // Render week columns
-  weeks.forEach(weekDaysArr => {
+  weeks.forEach((weekDaysArr, weekIndex) => {
     const weekCol = document.createElement("div");
     weekCol.className = "week-column";
 
@@ -71,7 +55,7 @@ function buildGrid(name, containerId) {
       const dayDiv = document.createElement("div");
       dayDiv.className = "day";
 
-      const day = weekDaysArr[i];
+      const day = weekDaysArr.find(d => d && d.getDay() === i);
       if (day) {
         const dateStr = day.toISOString().slice(0, 10);
         dayDiv.title = dateStr;
@@ -96,8 +80,24 @@ function buildGrid(name, containerId) {
 
     weeksContainer.appendChild(weekCol);
   });
-}
 
-// Build grids
-buildGrid("omar", "omar");
-buildGrid("samarth", "samarth");
+  // Month labels
+  const monthPositions = {};
+  allDates.forEach((date, idx) => {
+    const month = date.getMonth();
+    if (!(month in monthPositions)) monthPositions[month] = idx;
+  });
+
+  const weekWidth = 18; // width of a week column in px
+  Object.entries(monthPositions).forEach(([month, dayIdx]) => {
+    const weekIndex = Math.floor(dayIdx / 7);
+    const label = document.createElement("div");
+    label.className = "month-label";
+    label.textContent = monthNames[month];
+    label.style.position = "absolute";
+    label.style.left = weekIndex * (weekWidth + 4) + 20 + "px"; // offset 20px for day labels
+    monthLabels.appendChild(label);
+  });
+
+  monthLabels.style.position = "relative";
+}

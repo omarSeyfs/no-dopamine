@@ -16,75 +16,95 @@ const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function buildGrid(name, containerId) {
   const container = document.getElementById(containerId);
+  container.innerHTML = ""; // clear
 
-  // 1. Add month headers row
-  const monthsRow = document.createElement("div");
-  monthsRow.className = "grid";
-  
-  // Empty top-left cell for alignment
-  const emptyCell = document.createElement("div");
-  emptyCell.style.width = "40px";
-  monthsRow.appendChild(emptyCell);
+  // Create month labels container
+  const monthLabelsContainer = document.createElement("div");
+  monthLabelsContainer.className = "month-labels";
+  container.appendChild(monthLabelsContainer);
 
-  // Create month columns
-  const totalDays = Math.ceil((end - start)/(1000*60*60*24));
-  let currentMonth = start.getMonth();
-  let dayCount = 0;
+  // Create a container for the weeks
+  const weeksContainer = document.createElement("div");
+  weeksContainer.style.display = "flex";
+  container.appendChild(weeksContainer);
+
+  // Prepare days
+  const allDates = [];
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    if (d.getDate() === 1 || dayCount === 0) {
-      const monthDiv = document.createElement("div");
-      monthDiv.className = "month-label";
-      monthDiv.style.gridColumnStart = dayCount + 2; // offset by day labels
-      monthDiv.textContent = monthNames[d.getMonth()];
-      monthsRow.appendChild(monthDiv);
-    }
-    dayCount++;
+    allDates.push(new Date(d));
   }
-  container.appendChild(monthsRow);
 
-  // 2. Add day rows
-  for (let wd = 0; wd < 7; wd++) {
-    const row = document.createElement("div");
-    row.className = "grid";
+  // Group days by week (starting on Sunday)
+  const weeks = [];
+  let week = [];
+  for (let i = 0; i < allDates.length; i++) {
+    const day = allDates[i];
+    if (day.getDay() === 0 && week.length > 0) {
+      weeks.push(week);
+      week = [];
+    }
+    week.push(day);
+  }
+  if (week.length > 0) weeks.push(week);
 
-    // Day label
-    const dayLabel = document.createElement("div");
-    dayLabel.className = "day-label";
-    dayLabel.textContent = weekDays[wd];
-    row.appendChild(dayLabel);
+  // Render month labels
+  weeks.forEach((weekDaysArr, weekIndex) => {
+    const firstDay = weekDaysArr[0];
+    const monthDiv = document.createElement("div");
+    monthDiv.className = "month-label";
 
-    // Fill each day
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      if (d.getDay() !== wd) continue;
+    // Only put label if first day of month
+    if (firstDay.getDate() <= 7) {
+      monthDiv.textContent = monthNames[firstDay.getMonth()];
+      monthDiv.style.width = (weekDaysArr.length * 18) + "px"; // approximate width
+      monthLabelsContainer.appendChild(monthDiv);
+    } else {
+      const emptyDiv = document.createElement("div");
+      emptyDiv.style.width = (weekDaysArr.length * 18) + "px";
+      monthLabelsContainer.appendChild(emptyDiv);
+    }
+  });
 
-      const dateStr = d.toISOString().slice(0,10);
-      const box = document.createElement("div");
-      box.className = "day";
-      box.title = dateStr;
+  // Render week columns
+  weeks.forEach(weekDaysArr => {
+    const weekCol = document.createElement("div");
+    weekCol.className = "week-column";
 
-      const ref = db.collection("habits").doc(name + "_" + dateStr);
+    // Fill 7 days
+    for (let i = 0; i < 7; i++) {
+      const dayDiv = document.createElement("div");
+      dayDiv.className = "day";
 
-      ref.onSnapshot(doc => {
-        if (doc.exists && doc.data().done) {
-          box.classList.add("done");
-        } else {
-          box.classList.remove("done");
-        }
-      });
+      const day = weekDaysArr.find(d => d.getDay() === i);
+      if (day) {
+        const dateStr = day.toISOString().slice(0,10);
+        dayDiv.title = dateStr;
 
-      box.onclick = async () => {
-        const snap = await ref.get();
-        const current = snap.exists ? snap.data().done : false;
-        ref.set({ done: !current });
-      };
+        const ref = db.collection("habits").doc(name + "_" + dateStr);
+        ref.onSnapshot(doc => {
+          if (doc.exists && doc.data().done) {
+            dayDiv.classList.add("done");
+          } else {
+            dayDiv.classList.remove("done");
+          }
+        });
 
-      row.appendChild(box);
+        dayDiv.onclick = async () => {
+          const snap = await ref.get();
+          const current = snap.exists ? snap.data().done : false;
+          ref.set({ done: !current });
+        };
+      } else {
+        dayDiv.style.visibility = "hidden"; // empty cell for alignment
+      }
+
+      weekCol.appendChild(dayDiv);
     }
 
-    container.appendChild(row);
-  }
+    weeksContainer.appendChild(weekCol);
+  });
 }
 
-// Build grids for each person
+// Build grids
 buildGrid("omar", "omar");
 buildGrid("samarth", "samarth");

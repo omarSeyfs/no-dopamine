@@ -1,30 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>No Dopamine Tracker</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>noDopamineOS</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #151820;
+      --text: #e6e6eb;
+      --muted: #9aa0aa;
+      --border: #232634;
+      --green: #4ade80;
+      --green-dim: #1f3d2b;
+      --today: #60a5fa;
+      --missed: #3a1e1e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    header {
+      text-align: center;
+      padding: 2rem 1rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 { margin: 0; font-weight: 600; letter-spacing: 0.04em; }
+
+    .global-counter { margin-top: 1rem; font-size: 1.2rem; }
+    .subtext { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
+
+    .quote {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      text-align: center;
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem;
+    }
+
+    .user {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .username { font-size: 1.2rem; font-weight: 600; text-align: center; }
+
+    .months { display: flex; gap: 14px; font-size: 0.7rem; color: var(--muted); }
+
+    .heatmap-wrapper { display: flex; gap: 6px; }
+
+    .days { display: grid; grid-template-rows: repeat(7, 1fr); gap: 4px; font-size: 0.7rem; color: var(--muted); }
+
+    .heatmap {
+      display: grid;
+      grid-template-rows: repeat(7, 1fr);
+      grid-auto-flow: column;
+      gap: 4px;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .day { width: 14px; height: 14px; background: var(--border); border-radius: 3px; }
+    .day.completed { background: var(--green); }
+    .day.today { outline: 2px solid var(--today); }
+    .day.missed { background: var(--missed); }
+
+    .controls { display: flex; gap: 0.5rem; }
+
+    button {
+      flex: 1;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    button:hover { border-color: var(--green); color: var(--green); }
+
+    .forum { border-top: 1px solid var(--border); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+    textarea {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      resize: vertical;
+      min-height: 60px;
+      padding: 0.5rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  </style>
 </head>
-
 <body>
-<h1>NO DOPAMINE</h1>
+  <header>
+    <h1>noDopamineOS</h1>
+    <div class="global-counter" id="globalDay">Day 1</div>
+    <div class="subtext">until we get into university</div>
+  </header>
 
-<div class="container">
-  <div class="person">
-    <div class="name">Omar</div>
-    <div id="omar" class="grid-wrapper"></div>
+  <div class="quote">
+    “Humankind cannot gain anything without first giving something in return.<br>
+    To obtain, something of equal value must be lost.<br>
+    <strong>That is Alchemy’s First Law of Equivalent Exchange.</strong>”
   </div>
 
-  <div class="person">
-    <div class="name">Samarth</div>
-    <div id="samarth" class="grid-wrapper"></div>
-  </div>
-</div>
+  <main>
+    <section class="user" data-user="omar">
+      <div class="username">Omar</div>
+      <div class="months" id="months-omar"></div>
+      <div class="heatmap-wrapper">
+        <div class="days">Sun<br>Mon<br>Tue<br>Wed<br>Thu<br>Fri<br>Sat</div>
+        <div class="heatmap" id="heatmap-omar"></div>
+      </div>
+      <div class="controls">
+        <button onclick="continueStreak('omar')">Continue Streak</button>
+        <button onclick="undoStreak('omar')">Undo</button>
+      </div>
+      <div class="forum">
+        <textarea placeholder="Thoughts / quotes..." onchange="saveNote('omar', this.value)"></textarea>
+      </div>
+    </section>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <section class="user" data-user="samarth">
+      <div class="username">Samarth</div>
+      <div class="months" id="months-samarth"></div>
+      <div class="heatmap-wrapper">
+        <div class="days">Sun<br>Mon<br>Tue<br>Wed<br>Thu<br>Fri<br>Sat</div>
+        <div class="heatmap" id="heatmap-samarth"></div>
+      </div>
+      <div class="controls">
+        <button onclick="continueStreak('samarth')">Continue Streak</button>
+        <button onclick="undoStreak('samarth')">Undo</button>
+      </div>
+      <div class="forum">
+        <textarea placeholder="Thoughts / quotes..." onchange="saveNote('samarth', this.value)"></textarea>
+      </div>
+    </section>
+  </main>
 
-<script src="script.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD5hYcYpCJmcnlKs_R7EJ_DmD2HoLfM1xI",
+      authDomain: "habittrackeros.firebaseapp.com",
+      projectId: "habittrackeros",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const START_DATE = new Date('2026-02-07');
+    const END_DATE = new Date('2027-02-07');
+
+    function daysBetween(a, b) {
+      return Math.floor((b - a) / (1000 * 60 * 60 * 24));
+    }
+
+    function clampDate(date) {
+      return date > END_DATE ? END_DATE : date;
+    }
+
+    function daysBetweenClamped(a, b) {
+      return daysBetween(a, clampDate(b));
+    }
+
+    function daysBetween(a, b) {
+      return Math.floor((b - a) / (1000 * 60 * 60 * 24));
+    }
+
+    function buildCalendar(user) {
+      const heatmap = document.getElementById(`heatmap-${user}`);
+      const monthsRow = document.getElementById(`months-${user}`);
+      heatmap.innerHTML = '';
+      monthsRow.innerHTML = '';
+
+      const today = clampDate(new Date());
+      const totalDays = daysBetweenClamped(START_DATE, today) + 1;
+
+      let currentMonth = -1;
+      for (let i = 0; i < totalDays; i++) {
+        const date = new Date(START_DATE);
+        date.setDate(date.getDate() + i);
+
+        if (date.getMonth() !== currentMonth) {
+          currentMonth = date.getMonth();
+          const m = document.createElement('div');
+          m.textContent = date.toLocaleString('default', { month: 'short' });
+          monthsRow.appendChild(m);
+        }
+
+        const cell = document.createElement('div');
+        cell.className = 'day';
+        cell.dataset.date = date.toISOString().slice(0, 10);
+        cell.title = cell.dataset.date;
+
+        if (date.toDateString() === today.toDateString()) {
+          cell.classList.add('today');
+        }
+
+        heatmap.appendChild(cell);
+      }
+    }
+
+    function renderStreak(user, streak = []) {
+      const cells = document.querySelectorAll(`#heatmap-${user} .day`);
+      let lastCompleted = null;
+
+      cells.forEach(cell => {
+        const d = cell.dataset.date;
+        cell.classList.remove('completed', 'missed');
+        if (streak.includes(d)) {
+          cell.classList.add('completed');
+          lastCompleted = d;
+        }
+      });
+
+      if (lastCompleted) {
+        const lastDate = new Date(lastCompleted);
+        cells.forEach(cell => {
+          const d = new Date(cell.dataset.date);
+          if (d > lastDate && d < clampDate(new Date())()) {
+            cell.classList.add('missed');
+          }
+        });
+      }
+    }
+
+    function continueStreak(user) {
+      const today = new Date().toISOString().slice(0, 10);
+      const ref = db.collection('users').doc(user);
+
+      ref.get().then(doc => {
+        const data = doc.exists ? doc.data() : { streak: [] };
+        if (data.streak.includes(today)) return;
+        data.streak.push(today);
+        data.streak.sort();
+        ref.set(data);
+      });
+    }
+
+    function undoStreak(user) {
+      const ref = db.collection('users').doc(user);
+      ref.get().then(doc => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        data.streak.pop();
+        ref.set(data);
+      });
+    }
+
+    function saveNote(user, text) {
+      db.collection('users').doc(user).set({ note: text }, { merge: true });
+    }
+
+    function updateGlobalCounter() {
+      const today = clampDate(new Date());
+      const days = daysBetweenClamped(START_DATE, today) + 1;
+      document.getElementById('globalDay').textContent = `Day ${days}`;
+    }`;
+    }
+
+    ['omar', 'samarth'].forEach(user => {
+      buildCalendar(user);
+      db.collection('users').doc(user).onSnapshot(doc => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        renderStreak(user, data.streak || []);
+        if (data.note) {
+          document.querySelector(`[data-user="${user}"] textarea`).value = data.note;
+        }
+      });
+    });
+
+    updateGlobalCounter();
+  </script>
 </body>
 </html>

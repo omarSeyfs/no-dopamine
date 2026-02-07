@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>noDopamineOS</title>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -101,7 +100,6 @@
       authDomain: "habittrackeros.firebaseapp.com",
       projectId: "habittrackeros",
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -112,59 +110,41 @@
     function daysBetween(a, b) { return Math.floor((b - a)/(1000*60*60*24)); }
     function daysBetweenClamped(a,b) { return daysBetween(a, clampDate(b)); }
 
-    function buildCalendar(user) {
-      const heatmap = document.getElementById(`heatmap-${user}`);
-      const monthsRow = document.getElementById(`months-${user}`);
-      heatmap.innerHTML = '';
-      monthsRow.innerHTML = '';
+    function buildCalendar(user){
+      const heatmap=document.getElementById(`heatmap-${user}`);
+      const monthsRow=document.getElementById(`months-${user}`);
+      heatmap.innerHTML=''; monthsRow.innerHTML='';
 
-      const today = clampDate(new Date());
-      const totalDays = daysBetweenClamped(START_DATE, today) + 1;
-
-      let currentMonth = -1;
-      for (let i=0;i<totalDays;i++) {
-        const date = new Date(START_DATE);
-        date.setDate(date.getDate()+i);
-
-        if(date.getMonth() !== currentMonth){
-          currentMonth = date.getMonth();
-          const m = document.createElement('div');
-          m.textContent = date.toLocaleString('default',{month:'short'});
-          monthsRow.appendChild(m);
-        }
-
-        const cell = document.createElement('div');
-        cell.className='day';
-        cell.dataset.date=date.toISOString().slice(0,10);
-        cell.title=cell.dataset.date;
-        if(date.toDateString()===today.toDateString()) cell.classList.add('today');
+      let currentMonth=-1;
+      for(let d=new Date(START_DATE); d<=END_DATE; d.setDate(d.getDate()+1)){
+        const date=new Date(d);
+        if(date.getMonth()!==currentMonth){currentMonth=date.getMonth(); const m=document.createElement('div'); m.textContent=date.toLocaleString('default',{month:'short'}); monthsRow.appendChild(m);}
+        const cell=document.createElement('div'); cell.className='day'; cell.dataset.date=date.toISOString().slice(0,10); cell.title=cell.dataset.date;
         heatmap.appendChild(cell);
       }
     }
 
     function renderStreak(user, streak=[]){
       const cells=document.querySelectorAll(`#heatmap-${user} .day`);
-      let lastCompleted=null;
-      cells.forEach(c=>{c.classList.remove('completed','missed');if(streak.includes(c.dataset.date)){c.classList.add('completed');lastCompleted=c.dataset.date;}});
-      if(lastCompleted){
-        const lastDate=new Date(lastCompleted);
-        cells.forEach(c=>{const d=new Date(c.dataset.date);if(d>lastDate && d<clampDate(new Date())) c.classList.add('missed');});
-      }
+      cells.forEach(c=>{c.classList.remove('completed');});
+      streak.forEach(d=>{const cell=document.querySelector(`#heatmap-${user} .day[data-date='${d}']`); if(cell) cell.classList.add('completed');});
     }
 
     function continueStreak(user){
-      const today=clampDate(new Date()).toISOString().slice(0,10);
       const ref=db.collection('users').doc(user);
       ref.get().then(doc=>{
         const data=doc.exists?doc.data():{streak:[]};
-        if(data.streak.includes(today)) return;
-        data.streak.push(today);data.streak.sort();ref.set(data);
+        const lastDate=data.streak.length?new Date(data.streak[data.streak.length-1]):START_DATE;
+        let nextDate=new Date(lastDate); nextDate.setDate(nextDate.getDate()+1);
+        if(nextDate>END_DATE) return;
+        const iso=nextDate.toISOString().slice(0,10);
+        data.streak.push(iso); ref.set(data);
       });
     }
 
     function undoStreak(user){
       const ref=db.collection('users').doc(user);
-      ref.get().then(doc=>{if(!doc.exists) return; const data=doc.data();data.streak.pop();ref.set(data);});
+      ref.get().then(doc=>{if(!doc.exists) return; const data=doc.data(); data.streak.pop(); ref.set(data);});
     }
 
     function saveNote(user,text){
@@ -172,8 +152,7 @@
     }
 
     function updateGlobalCounter(){
-      const today=clampDate(new Date());
-      const days=daysBetweenClamped(START_DATE,today)+1;
+      const ref=new Date(); const days=daysBetweenClamped(START_DATE, clampDate(ref))+1;
       document.getElementById('globalDay').textContent=`Day ${days}`;
     }
 
@@ -181,8 +160,7 @@
       buildCalendar(u);
       db.collection('users').doc(u).onSnapshot(doc=>{
         if(!doc.exists) return;
-        const data=doc.data();
-        renderStreak(u,data.streak||[]);
+        const data=doc.data(); renderStreak(u,data.streak||[]);
         if(data.note) document.querySelector(`[data-user="${u}"] textarea`).value=data.note;
       });
     });

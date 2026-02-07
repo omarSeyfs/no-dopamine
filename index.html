@@ -119,13 +119,8 @@
       for(let d=new Date(START_DATE); d<=END_DATE; d.setDate(d.getDate()+1)){
         const date=new Date(d);
         if(date.getMonth()!==currentMonth){currentMonth=date.getMonth(); const m=document.createElement('div'); m.textContent=date.toLocaleString('default',{month:'short'}); monthsRow.appendChild(m);}
-        const cell=document.createElement('div');
-        cell.className='day'; cell.dataset.date=date.toISOString().slice(0,10); cell.title=cell.dataset.date;
-        // correct start day for first column
-        if(d.getTime()===START_DATE.getTime() && startDay>0){
-          for(let i=0;i<startDay;i++){const empty=document.createElement('div'); empty.className='day'; empty.style.visibility='hidden'; heatmap.appendChild(empty);}
-        }
-        heatmap.appendChild(cell);
+        if(d.getTime()===START_DATE.getTime() && startDay>0){for(let i=0;i<startDay;i++){const empty=document.createElement('div'); empty.className='day'; empty.style.visibility='hidden'; heatmap.appendChild(empty);}}
+        const cell=document.createElement('div'); cell.className='day'; cell.dataset.date=date.toISOString().slice(0,10); cell.title=cell.dataset.date; heatmap.appendChild(cell);
       }
     }
 
@@ -133,6 +128,10 @@
       const cells=document.querySelectorAll(`#heatmap-${user} .day`);
       cells.forEach(c=>{c.classList.remove('completed');});
       streak.forEach(d=>{const cell=document.querySelector(`#heatmap-${user} .day[data-date='${d}']`); if(cell) cell.classList.add('completed');});
+    }
+
+    function updateGlobalCounter(days){
+      document.getElementById('globalDay').textContent=`Day ${days}`;
     }
 
     function continueStreak(user){
@@ -144,21 +143,23 @@
         let nextDate=new Date(lastDate); nextDate.setDate(nextDate.getDate()+1);
         if(nextDate>END_DATE) return;
         const iso=nextDate.toISOString().slice(0,10);
-        data.streak.push(iso); ref.set(data);
+        data.streak.push(iso);
+        ref.set(data).then(()=>{
+          renderStreak(user,data.streak);
+          updateGlobalCounter(data.streak.length);
+        });
       });
     }
 
     function undoStreak(user){
       const ref=db.collection('users').doc(user);
-      ref.get().then(doc=>{if(!doc.exists) return; const data=doc.data(); data.streak.pop(); ref.set(data);});
+      ref.get().then(doc=>{if(!doc.exists) return; const data=doc.data(); data.streak.pop(); ref.set(data).then(()=>{
+        renderStreak(user,data.streak);
+        updateGlobalCounter(data.streak.length);
+      });});
     }
 
     function saveNote(user,text){ db.collection('users').doc(user).set({note:text},{merge:true}); }
-
-    function updateGlobalCounter(){
-      const days=daysBetween(START_DATE, clampDate(new Date()))+1;
-      document.getElementById('globalDay').textContent=`Day ${days}`;
-    }
 
     ['omar','samarth'].forEach(u=>{
       buildCalendar(u);
@@ -166,10 +167,9 @@
         if(!doc.exists) return;
         const data=doc.data(); renderStreak(u,data.streak||[]);
         if(data.note) document.querySelector(`[data-user="${u}"] textarea`).value=data.note;
+        updateGlobalCounter(data.streak?data.streak.length:0);
       });
     });
-
-    updateGlobalCounter();
   </script>
 </body>
 </html>

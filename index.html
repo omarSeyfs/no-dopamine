@@ -31,10 +31,8 @@
     main { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1.5rem; }
     .user { background: var(--panel); border: 1px solid var(--border); padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
     .username { font-size: 1.2rem; font-weight: 600; text-align: center; }
-    .months { display: grid; grid-auto-flow: column; grid-auto-columns: 20px; font-size: 0.7rem; color: var(--muted); justify-items: center; margin-left: 20px; margin-bottom: 4px; }
     .heatmap-wrapper { display: flex; gap: 6px; }
-    .days { display: grid; grid-template-rows: repeat(7, 16px); gap: 4px; font-size: 0.7rem; color: var(--muted); text-align: right; line-height: 14px; }
-    .heatmap { display: grid; grid-template-rows: repeat(7, 16px); grid-auto-flow: column; gap: 4px; overflow-x: auto; padding-bottom: 0.5rem; border-left: 1px solid var(--border); }
+    .heatmap { display: grid; grid-template-rows: repeat(7, 16px); grid-auto-flow: column; gap: 4px; overflow-x: auto; padding-bottom: 0.5rem; }
     .day { width: 14px; height: 14px; background: var(--border); border-radius: 2px; border: 1px solid var(--border); cursor: pointer; }
     .day.completed { background: var(--green); border: 1px solid var(--green); }
     .day.today { outline: 2px solid var(--today); }
@@ -63,9 +61,7 @@
   <main>
     <section class="user" data-user="omar">
       <div class="username">Omar</div>
-      <div class="months" id="months-omar"></div>
       <div class="heatmap-wrapper">
-        <div class="days">Sun<br>Mon<br>Tue<br>Wed<br>Thu<br>Fri<br>Sat</div>
         <div class="heatmap" id="heatmap-omar"></div>
       </div>
       <div class="controls">
@@ -79,9 +75,7 @@
 
     <section class="user" data-user="samarth">
       <div class="username">Samarth</div>
-      <div class="months" id="months-samarth"></div>
       <div class="heatmap-wrapper">
-        <div class="days">Sun<br>Mon<br>Tue<br>Wed<br>Thu<br>Fri<br>Sat</div>
         <div class="heatmap" id="heatmap-samarth"></div>
       </div>
       <div class="controls">
@@ -110,27 +104,16 @@
 
     function buildCalendar(user){
       const heatmap=document.getElementById(`heatmap-${user}`);
-      const monthsRow=document.getElementById(`months-${user}`);
-      heatmap.innerHTML=''; monthsRow.innerHTML='';
-
-      let currentMonth=-1;
+      heatmap.innerHTML='';
       let startDay=START_DATE.getDay();
       for(let d=new Date(START_DATE); d<=END_DATE; d.setDate(d.getDate()+1)){
-        const date=new Date(d);
-        if(date.getMonth()!==currentMonth){
-          currentMonth=date.getMonth();
-          const m=document.createElement('div');
-          m.textContent=date.toLocaleString('default',{month:'short'});
-          m.style.gridColumnStart = heatmap.children.length + 1;
-          monthsRow.appendChild(m);
-        }
         if(d.getTime()===START_DATE.getTime() && startDay>0){
           for(let i=0;i<startDay;i++){const empty=document.createElement('div'); empty.className='day'; empty.style.visibility='hidden'; heatmap.appendChild(empty);}
         }
         const cell=document.createElement('div');
         cell.className='day';
-        cell.dataset.date=date.toISOString().slice(0,10);
-        cell.title=date.toDateString();
+        cell.dataset.date=d.toISOString().slice(0,10);
+        cell.title=d.toDateString();
         heatmap.appendChild(cell);
       }
     }

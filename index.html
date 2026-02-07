@@ -38,7 +38,7 @@
     .day.today { outline: 2px solid var(--today); }
     .day.missed { background: var(--missed); border: 1px solid var(--missed); }
     .controls { display: flex; gap: 0.5rem; }
-    button { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 0.5rem; cursor: pointer; font-size: 0.85rem; }
+    button { flex: 1; background: transparent; color: var(--text); border: 1px solid var(--border); padding: 0.5rem; cursor: pointer; font-size: 0.85rem; }
     button:hover { border-color: var(--green); color: var(--green); }
     .forum { border-top: 1px solid var(--border); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; width: 100%; }
     textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); resize: vertical; min-height: 60px; padding: 0.5rem; font-family: inherit; font-size: 0.85rem; width: 100%; }
@@ -65,8 +65,8 @@
         <div class="heatmap" id="heatmap-omar"></div>
       </div>
       <div class="controls">
-        <button style="flex:1;">Continue Streak</button>
-        <button style="flex:1;">Undo</button>
+        <button onclick="continueStreak('omar')">Continue Streak</button>
+        <button onclick="undoStreak('omar')">Undo</button>
       </div>
       <div class="forum">
         <textarea placeholder="Thoughts / quotes..." onchange="saveNote('omar', this.value)"></textarea>
@@ -79,8 +79,8 @@
         <div class="heatmap" id="heatmap-samarth"></div>
       </div>
       <div class="controls">
-        <button style="flex:1;">Continue Streak</button>
-        <button style="flex:1;">Undo</button>
+        <button onclick="continueStreak('samarth')">Continue Streak</button>
+        <button onclick="undoStreak('samarth')">Undo</button>
       </div>
       <div class="forum">
         <textarea placeholder="Thoughts / quotes..." onchange="saveNote('samarth', this.value)"></textarea>
